@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quick Poll</title>
+
+  <!-- ===== GOOGLE CONSENT MODE ===== -->
+  <!-- This MUST run before any Google ad/analytics script loads.
+       It tells Google "don't use any personal data yet" by default.
+       Once the user clicks "Accept" in the cookie banner, script.js
+       updates these values to "granted". -->
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('consent', 'default', {
+      'ad_storage': 'denied',
+      'ad_user_data': 'denied',
+      'ad_personalization': 'denied',
+      'analytics_storage': 'denied'
+    });
+  </script>
+
+  <!-- Link to the stylesheet -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ===== TOP AD SLOT ===== -->
+  <div class="ad-slot ad-top">
+    Ad space (Google AdSense) — Top banner
+  </div>
+
+  <main class="poll-card">
+
+    <!-- Small header row: app title on the left, archive button on the right -->
+    <div class="app-header">
+      <span class="app-title">🗓️ Daily Poll</span>
+      <button id="archive-btn" class="archive-btn" type="button">🗂 Past polls</button>
+    </div>
+
+    <!-- The question text is written by JavaScript, after it loads
+         the "question" field from today's (or a past) Firestore document -->
+    <h1 id="question" class="question">Loading poll…</h1>
+
+    <!-- Shows "Today's poll" or "Poll from <date>" depending on what's loaded -->
+    <p id="poll-date-label" class="poll-date-label"></p>
+
+    <!-- Only visible when browsing a past poll; jumps back to today's poll -->
+    <button id="back-to-today" class="back-to-today hidden" type="button">← Back to today's poll</button>
+
+    <!-- ===== VOTING AREA ===== -->
+    <!-- Empty on purpose: script.js reads the fruit fields from Firestore
+         and creates one button per fruit here at runtime. -->
+    <div id="options-container" class="options"></div>
+
+    <!-- ===== RESULTS AREA (hidden at first, filled in by JS) ===== -->
+    <div id="results" class="results hidden">
+      <p class="thanks">Thanks for voting! 🎉</p>
+
+      <!-- One .result-row per option will be added here by JavaScript -->
+      <div id="results-list" class="results-list"></div>
+
+      <p id="total-votes" class="total-votes">Total votes: 0</p>
+    </div>
+
+  </main>
+
+  <!-- ===== BOTTOM AD SLOT ===== -->
+  <div class="ad-slot ad-bottom">
+    Ad space (Google AdSense) — Bottom banner
+    <!-- Real AdSense <ins> code goes here later. See the Google Consent
+         Mode script in <head> - ads only get personalization once the
+         user accepts cookies in the banner below. -->
+  </div>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="site-footer">
+    <a href="privacy.html">Privacy Policy</a>
+    <button id="cookie-settings-link" class="footer-link-btn" type="button">Cookie settings</button>
+  </footer>
+
+  <!-- ===== COOKIE CONSENT BANNER ===== -->
+  <!-- Hidden by default; script.js shows it if the user hasn't chosen yet -->
+  <div id="cookie-banner" class="cookie-banner hidden">
+    <p class="cookie-text">
+      We use cookies to show ads and understand how visitors use this site.
+      <a href="privacy.html">Learn more</a>.
+    </p>
+    <div class="cookie-buttons">
+      <button id="cookie-decline" class="cookie-btn cookie-btn-secondary" type="button">Decline</button>
+      <button id="cookie-accept" class="cookie-btn cookie-btn-primary" type="button">Accept</button>
+    </div>
+  </div>
+
+  <!-- ===== ARCHIVE MODAL (hidden until "Past polls" is clicked) ===== -->
+  <div id="archive-modal" class="modal-overlay hidden">
+    <div class="modal-panel">
+      <div class="modal-header">
+        <h2>Past polls</h2>
+        <button id="close-archive" class="modal-close" type="button" aria-label="Close">✕</button>
+      </div>
+
+      <!-- Jump directly to ANY date, not just the ones in the list below -->
+      <div class="archive-date-picker">
+        <input id="archive-date-input" class="archive-date-input" type="date" />
+        <button id="archive-date-go" class="archive-date-go" type="button">Go</button>
+      </div>
+      <!-- Shown if the chosen date has no poll in Firestore -->
+      <p id="archive-date-error" class="archive-date-error"></p>
+
+      <p class="archive-divider">Or pick a recent one:</p>
+
+      <!-- One button per past poll gets added here by script.js -->
+      <div id="archive-list" class="archive-list"></div>
+    </div>
+  </div>
+
+  <!-- The script is loaded last, so the page already exists when it runs.
+       type="module" is required because script.js uses "import" to load Firebase. -->
+  <script type="module" src="script.js"></script>
+</body>
+</html>

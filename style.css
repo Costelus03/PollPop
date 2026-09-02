@@ -1,0 +1,527 @@
+/* ===== BASIC RESET ===== */
+/* Remove the browser's default spacing so we control it ourselves */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* A rounded, friendly font from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap');
+
+body {
+  font-family: 'Fredoka', sans-serif;
+  background: #F2F6F1;        /* soft light-green background */
+  color: #1D3557;              /* dark blue text */
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+}
+
+/* ===== AD SLOTS ===== */
+.ad-slot {
+  width: 100%;
+  max-width: 600px;
+  min-height: 90px;
+  background: repeating-linear-gradient(
+    45deg,
+    #E9EDE8,
+    #E9EDE8 10px,
+    #DDE3DC 10px,
+    #DDE3DC 20px
+  );
+  border: 2px dashed #A8B2A5;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #6B786A;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* ===== MAIN POLL CARD ===== */
+.poll-card {
+  width: 100%;
+  max-width: 600px;
+  background: #FFFFFF;
+  border-radius: 24px;
+  box-shadow: 0 10px 30px rgba(29, 53, 87, 0.08);
+  padding: 32px 24px;
+}
+
+.question {
+  font-size: 26px;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+/* ===== HEADER (title + archive button) ===== */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.app-title {
+  font-weight: 700;
+  font-size: 16px;
+  color: #6B786A;
+}
+
+/* Kept small and quiet on purpose - it's a secondary action, not the main CTA */
+.archive-btn {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1D3557;
+  background: #F2F6F1;
+  border: 1px solid #DDE3DC;
+  border-radius: 999px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.archive-btn:hover {
+  background: #E9EDE8;
+}
+
+/* ===== DATE LABEL + "BACK TO TODAY" LINK ===== */
+.poll-date-label {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6B786A;
+  margin-top: -14px;
+  margin-bottom: 18px;
+}
+
+.back-to-today {
+  display: block;
+  margin: -8px auto 18px auto;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: #2A9D8F;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* ===== ARCHIVE MODAL ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(29, 53, 87, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 10;
+}
+
+.modal-panel {
+  width: 100%;
+  max-width: 420px;
+  max-height: 70vh;
+  background: #FFFFFF;
+  border-radius: 20px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-header h2 {
+  font-size: 18px;
+}
+
+.modal-close {
+  font-family: inherit;
+  font-size: 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6B786A;
+  padding: 4px 8px;
+}
+
+.archive-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+/* ===== DATE PICKER (inside the archive modal) ===== */
+.archive-date-picker {
+  display: flex;
+  gap: 8px;
+}
+
+.archive-date-input {
+  flex: 1;
+  font-family: inherit;
+  font-size: 14px;
+  color: #1D3557;
+  background: #F7F3EA;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.archive-date-input:focus {
+  outline: none;
+  border-color: #FF6F59;
+}
+
+.archive-date-go {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: #FFFFFF;
+  background: #2A9D8F;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 18px;
+  cursor: pointer;
+}
+
+.archive-date-go:hover {
+  background: #24897C;
+}
+
+.archive-date-error {
+  font-size: 13px;
+  color: #E63946;
+  min-height: 16px; /* reserves space so the layout doesn't jump */
+}
+
+.archive-divider {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6B786A;
+}
+
+/* One row per past poll, built dynamically by script.js */
+.archive-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  font-family: inherit;
+  text-align: left;
+  background: #F7F3EA;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.archive-item:hover {
+  background: #FFF1EE;
+}
+
+.archive-date {
+  font-size: 12px;
+  font-weight: 700;
+  color: #2A9D8F;
+}
+
+.archive-question {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1D3557;
+}
+
+.archive-empty {
+  text-align: center;
+  font-size: 14px;
+  color: #6B786A;
+  padding: 12px 0;
+}
+
+/* ===== PRIVACY POLICY PAGE ===== */
+.policy-card {
+  text-align: left;
+}
+
+.policy-updated {
+  text-align: center;
+  font-size: 13px;
+  color: #6B786A;
+  margin-bottom: 24px;
+}
+
+.policy-section {
+  margin-bottom: 20px;
+}
+
+.policy-section h2 {
+  font-size: 17px;
+  margin-bottom: 8px;
+}
+
+.policy-section p,
+.policy-section li {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #1D3557;
+}
+
+.policy-list {
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.back-link {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2A9D8F;
+  text-decoration: underline;
+}
+.site-footer {
+  display: flex;
+  gap: 16px;
+  font-size: 13px;
+  color: #6B786A;
+}
+
+.site-footer a {
+  color: #6B786A;
+  text-decoration: underline;
+}
+
+/* Styled to look like the plain text link next to it, not like a button */
+.footer-link-btn {
+  font-family: inherit;
+  font-size: 13px;
+  color: #6B786A;
+  background: none;
+  border: none;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* ===== COOKIE CONSENT BANNER ===== */
+.cookie-banner {
+  position: fixed;
+  left: 20px;
+  right: 20px;
+  bottom: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+  background: #1D3557;
+  color: #FFFFFF;
+  border-radius: 16px;
+  padding: 18px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  z-index: 20;
+}
+
+.cookie-text {
+  font-size: 14px;
+  line-height: 1.4;
+  flex: 1 1 260px;
+}
+
+.cookie-text a {
+  color: #FFFFFF;
+  text-decoration: underline;
+}
+
+.cookie-buttons {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.cookie-btn {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 10px 18px;
+  cursor: pointer;
+  border: none;
+}
+
+.cookie-btn-primary {
+  background: #2A9D8F;
+  color: #FFFFFF;
+}
+
+.cookie-btn-primary:hover {
+  background: #24897C;
+}
+
+.cookie-btn-secondary {
+  background: transparent;
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.cookie-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ===== VOTING AREA (buttons, built dynamically by script.js) ===== */
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* One button per fruit found in the Firestore document */
+.option-btn {
+  font-family: inherit;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1D3557;
+  background: #F7F3EA;
+  border: 2px solid transparent;
+  border-radius: 16px;
+  padding: 18px 22px;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.option-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  border-color: #FF6F59;
+  background: #FFF1EE;
+}
+
+.option-btn:active {
+  transform: translateY(0) scale(0.99);
+}
+
+/* Dims and disables buttons while a vote is being sent to Firestore,
+   so the user can't double-click and send two votes by accident */
+.option-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ===== RESULTS AREA ===== */
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* The .hidden class fully hides an element */
+.hidden {
+  display: none;
+}
+
+.thanks {
+  text-align: center;
+  font-size: 20px;
+  font-weight: 700;
+  color: #2A9D8F;
+  margin-bottom: 6px;
+}
+
+.results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* One row per option, created dynamically by JavaScript */
+.result-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.result-label {
+  width: 100px;
+  font-weight: 600;
+  font-size: 15px;
+  /* Long fruit names won't break the layout */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The gray "track" the colored bar fills up */
+.bar-track {
+  flex: 1;
+  height: 18px;
+  background: #EDEDED;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+/* The colored bar; its width is set from JS depending on the percentage */
+.bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #2A9D8F, #6FCF97);
+  border-radius: 999px;
+  transition: width 0.6s ease; /* smooth animation when the percentage changes */
+}
+
+.result-percent {
+  width: 64px;
+  text-align: right;
+  font-weight: 700;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.total-votes {
+  text-align: center;
+  margin-top: 8px;
+  font-size: 14px;
+  color: #6B786A;
+}
+
+/* ===== MOBILE ADJUSTMENTS ===== */
+@media (max-width: 480px) {
+  .question {
+    font-size: 22px;
+  }
+  .option-btn {
+    font-size: 16px;
+    padding: 14px 18px;
+  }
+  .cookie-banner {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+  .cookie-buttons {
+    justify-content: center;
+  }
+}
