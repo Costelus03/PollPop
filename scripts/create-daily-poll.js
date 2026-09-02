@@ -1,15 +1,14 @@
 // ============================================================
 // This script creates TOMORROW's poll document in Firestore.
+// Instead of picking from a fixed list, it asks Claude (Anthropic's
+// AI) to invent a brand-new question every day - so you never have
+// to write questions.json by hand.
+//
 // It's meant to run automatically once a day via GitHub Actions -
 // see .github/workflows/daily-poll.yml in the same repository.
-//
-// It does NOT run in the browser like script.js does - it runs on
-// GitHub's servers, using Node.js, with full admin access to Firestore
-// (that's why it can create documents even though your Firestore
-// security rules block that from the browser).
 // ============================================================
 const admin = require('firebase-admin');
-const questions = require('./questions.json');
+const Anthropic = require('@anthropic-ai/sdk');
 
 // The service account key is provided as a GitHub Actions secret
 // (as a JSON string in an environment variable) - it is never
@@ -23,33 +22,12 @@ admin.initializeApp({
 const db = admin.firestore();
 const POLLS_COLLECTION = 'Polls';
 
-// Checks the WHOLE questions.json list for repeated question text
-// (case-insensitive), so an old question you forgot about - even one
-// added 100 days ago - can't accidentally get added a second time
-// without you noticing.
-function checkForDuplicateQuestions(questionList) {
-  const seenQuestions = new Set();
-  const duplicates = [];
-
-  questionList.forEach((item) => {
-    const normalized = item.question.trim().toLowerCase();
-    if (seenQuestions.has(normalized)) {
-      duplicates.push(item.question);
-    }
-    seenQuestions.add(normalized);
-  });
-
-  if (duplicates.length > 0) {
-    throw new Error(
-      'Duplicate question(s) found in questions.json: "' +
-      duplicates.join('", "') +
-      '". Please remove or edit the duplicate, then push again.'
-    );
-  }
-}
+// The Claude API key also comes from a GitHub Actions secret
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY
+});
 
 // Builds tomorrow's date as "YYYY-MM-DD", in UTC.
-// (GitHub Actions servers always run in UTC, no matter where you are.)
 function getTomorrowId() {
   const tomorrow = new Date();
   tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
@@ -61,11 +39,55 @@ function getTomorrowId() {
   return `${year}-${month}-${day}`;
 }
 
-async function main() {
-  // Fail fast, before touching Firestore at all, if the question list
-  // itself has a mistake in it.
-  checkForDuplicateQuestions(questions);
+// Reads every past poll's question text, so we can tell Claude what's
+// already been asked and it can avoid repeating itself.
+async function fetchPastQuestions() {
+  const snapshot = await db.collection(POLLS_COLLECTION).get();
+  const questions = [];
 
+  snapshot.forEach((docSnap) => {
+    const questionText = docSnap.data().question;
+    if (questionText) {
+      questions.push(questionText);
+    }
+  });
+
+  return questions;
+}
+
+// Asks Claude to invent a brand-new poll question + answer options.
+async function generateNewPoll(pastQuestions) {
+  const avoidList = pastQuestions.length > 0
+    ? pastQuestions.map((q) => `- ${q}`).join('\n')
+    : '(none yet - this is the very first poll)';
+
+  const prompt = `You write daily poll questions for a "curiosity poll" website - similar in spirit to Wordle, but for opinions instead of words. People vote, then see what everyone else picked.
+
+Write ONE brand-new poll question in English. It should be genuinely interesting to answer - the kind of question where you're curious what other people think. Mix up the style over time: personal preferences, "would you rather" dilemmas, light opinions, fun hypotheticals, everyday debates. Keep it short, punchy, and clear. Provide 3 to 6 short answer options.
+
+Do NOT repeat or closely resemble any of these already-used questions:
+${avoidList}
+
+Respond with ONLY valid JSON, no markdown formatting, no extra commentary, in exactly this shape:
+{"question": "...", "options": ["...", "...", "..."]}`;
+
+  const response = await anthropic.messages.create({
+    model: 'claude-haiku-4-5',
+    max_tokens: 300,
+    messages: [{ role: 'user', content: prompt }]
+  });
+
+  const rawText = response.content[0].text.trim();
+  const parsed = JSON.parse(rawText);
+
+  if (!parsed.question || !Array.isArray(parsed.options) || parsed.options.length < 2) {
+    throw new Error('Claude\'s response was missing a question or valid options: ' + rawText);
+  }
+
+  return parsed;
+}
+
+async function main() {
   const pollId = getTomorrowId();
   const pollRef = db.collection(POLLS_COLLECTION).doc(pollId);
 
@@ -77,21 +99,17 @@ async function main() {
     return;
   }
 
-  // Pick the next question from questions.json, cycling through the
-  // list based on how many polls already exist in Firestore - so it
-  // works through the whole list once before repeating any question.
-  const allPolls = await db.collection(POLLS_COLLECTION).listDocuments();
-  const pollCount = allPolls.length;
-  const chosenQuestion = questions[pollCount % questions.length];
+  const pastQuestions = await fetchPastQuestions();
+  const newPoll = await generateNewPoll(pastQuestions);
 
   // Build the document: { question: "...", OptionA: 0, OptionB: 0, ... }
-  const newPollData = { question: chosenQuestion.question };
-  chosenQuestion.options.forEach((optionName) => {
+  const newPollData = { question: newPoll.question };
+  newPoll.options.forEach((optionName) => {
     newPollData[optionName] = 0;
   });
 
   await pollRef.set(newPollData);
-  console.log(`Created poll for ${pollId}: "${chosenQuestion.question}"`);
+  console.log(`Created poll for ${pollId}: "${newPoll.question}"`);
 }
 
 main().catch((error) => {
