@@ -1,3 +1,7 @@
+/* A rounded, friendly font from Google Fonts - must be the very first
+   line in the file, per the CSS spec */
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap');
+
 /* ===== BASIC RESET ===== */
 /* Remove the browser's default spacing so we control it ourselves */
 * {
@@ -5,9 +9,6 @@
   padding: 0;
   box-sizing: border-box;
 }
-
-/* A rounded, friendly font from Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap');
 
 body {
   font-family: 'Fredoka', sans-serif;
