@@ -1,0 +1,31 @@
+name: Create Daily Poll
+
+# Runs automatically every day, and can also be triggered manually
+# from the "Actions" tab on GitHub - useful for testing.
+on:
+  schedule:
+    # 20:00 UTC = 22:00 or 23:00 in Romania, depending on daylight saving.
+    # This runs a few hours before Romanian midnight, so tomorrow's poll
+    # is always ready in time - even with some delay.
+    - cron: '0 20 * * *'
+  workflow_dispatch:
+
+jobs:
+  create-poll:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install firebase-admin
+        run: npm install firebase-admin
+
+      - name: Create tomorrow's poll
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node scripts/create-daily-poll.js

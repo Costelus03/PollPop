@@ -1,0 +1,14 @@
+[
+  {
+    "question": "What is your favorite fruit?",
+    "options": ["Apple", "Banana", "Cherry", "Grape", "Mango", "Orange", "Peach", "Pineapple", "Strawberry", "Watermelon"]
+  },
+  {
+    "question": "What is your favorite season?",
+    "options": ["Spring", "Summer", "Autumn", "Winter"]
+  },
+  {
+    "question": "What is your favorite type of movie?",
+    "options": ["Action", "Comedy", "Drama", "Horror", "Romance", "Sci-Fi"]
+  }
+]
