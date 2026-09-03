@@ -9,7 +9,13 @@
 <body>
 
   <main class="poll-card policy-card">
-    <h1 class="question">About Quick Poll</h1>
+    <h1 class="question">
+      <svg class="app-logo-mark" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" style="vertical-align: -4px; margin-right: 6px;">
+        <rect x="1" y="1" width="22" height="22" rx="7" fill="#2A9D8F" />
+        <path d="M7 12.5l3.2 3.2L17 8.5" stroke="#FFFFFF" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+      About Quick Poll
+    </h1>
 
     <section class="policy-section">
       <h2>What this is</h2>
@@ -52,11 +58,25 @@
       </p>
     </section>
 
+    <section class="policy-section feature-vote-box">
+      <h2>Want more polls per day?</h2>
+      <p id="feature-vote-prompt">
+        Right now there's just one question a day. If enough people want
+        it, I'll add more polls throughout the day - one click, no account
+        needed, and you can only vote once.
+      </p>
+      <button id="feature-vote-button" class="option-btn feature-vote-btn" type="button">
+        🙋 Yes, I'd vote more often
+      </button>
+      <p id="feature-vote-thanks" class="feature-vote-thanks hidden">✅ Thanks, noted!</p>
+      <p id="feature-vote-count" class="feature-vote-count"></p>
+    </section>
+
     <section class="policy-section">
       <h2>Contact</h2>
       <p>
         Questions, feedback, or a poll idea you'd like to suggest? Reach out
-        at: <strong>andrei.costin03@gmail.com</strong>
+        at: <strong>your-email@example.com</strong>
         <!-- Replace the placeholder above with your real contact email -->
       </p>
     </section>
@@ -64,5 +84,6 @@
     <a href="index.html" class="back-link">← Back to the poll</a>
   </main>
 
+  <script type="module" src="feature-vote.js"></script>
 </body>
 </html>
