@@ -63,7 +63,14 @@ async function generateNewPoll(pastQuestions) {
 
   const prompt = `You write daily poll questions for a "curiosity poll" website - similar in spirit to Wordle, but for opinions instead of words. People vote, then see what everyone else picked.
 
-Write ONE brand-new poll question in English. It should be genuinely interesting to answer - the kind of question where you're curious what other people think. Mix up the style over time: personal preferences, "would you rather" dilemmas, light opinions, fun hypotheticals, everyday debates. Keep it short, punchy, and clear. Provide 3 to 6 short answer options.
+Write ONE brand-new poll question in English. It should be genuinely interesting to answer - the kind of question where you're curious what other people think. Mix up the style over time: personal preferences, "would you rather" dilemmas, light opinions, fun hypotheticals, everyday debates.
+
+Choose the NUMBER of answer options based on what fits the question naturally, not a fixed count:
+- For questions with a wide, natural range of choices (favorite fruit, favorite country, favorite movie genre, favorite decade of music, etc.), give a generous list - 8 to 12 options - so people actually find the one they'd pick, not just the 3 most obvious ones.
+- For sharper dilemmas or opinion questions ("would you rather...", yes/no-ish debates), 2 to 5 options is usually enough and keeps it punchy.
+Always include at least 2 options. Feel free to add one witty/unexpected option where it fits (like a "none of the above" style answer), not just the obvious picks.
+
+Keep the question itself short, punchy, and clear.
 
 Do NOT repeat or closely resemble any of these already-used questions:
 ${avoidList}
@@ -73,7 +80,7 @@ Respond with ONLY valid JSON, no markdown formatting, no extra commentary, in ex
 
   const response = await anthropic.messages.create({
     model: 'claude-haiku-4-5',
-    max_tokens: 300,
+    max_tokens: 500,
     messages: [{ role: 'user', content: prompt }]
   });
 
