@@ -78,7 +78,16 @@ Respond with ONLY valid JSON, no markdown formatting, no extra commentary, in ex
   });
 
   const rawText = response.content[0].text.trim();
-  const parsed = JSON.parse(rawText);
+
+  // Claude sometimes wraps its answer in a markdown code fence
+  // (```json ... ```) even when asked not to - strip that off first,
+  // so JSON.parse() below doesn't choke on it.
+  const cleanedText = rawText
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/```\s*$/i, '')
+    .trim();
+
+  const parsed = JSON.parse(cleanedText);
 
   if (!parsed.question || !Array.isArray(parsed.options) || parsed.options.length < 2) {
     throw new Error('Claude\'s response was missing a question or valid options: ' + rawText);
