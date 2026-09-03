@@ -297,6 +297,7 @@ body {
 .back-link {
   display: inline-block;
   margin-top: 8px;
+  margin-right: 16px;
   font-size: 14px;
   font-weight: 600;
   color: #2A9D8F;
