@@ -70,6 +70,14 @@ const archiveDateError = document.getElementById('archive-date-error');
 const streakIndicator = document.getElementById('streak-indicator');
 const shareBtn = document.getElementById('share-btn');
 
+const shareModal = document.getElementById('share-modal');
+const closeShareBtn = document.getElementById('close-share');
+const shareWhatsappLink = document.getElementById('share-whatsapp');
+const shareFacebookLink = document.getElementById('share-facebook');
+const shareTwitterLink = document.getElementById('share-twitter');
+const shareEmailLink = document.getElementById('share-email');
+const shareCopyBtn = document.getElementById('share-copy');
+
 // ============================================================
 // STEP 5: Date helpers
 // ============================================================
@@ -277,32 +285,66 @@ function renderStreakAndShare() {
   shareBtn.classList.toggle('hidden', !myChoice);
 }
 
-async function shareResult() {
+// Builds the three pieces every share option needs: the text, the link
+// back to this exact poll, and the person's own choice.
+function buildShareContent() {
   const myChoice = localStorage.getItem(getStorageKey(currentPollId));
-  if (!myChoice) return;
-
   const question = questionEl.textContent;
   const shareUrl = `${window.location.origin}${window.location.pathname}?day=${currentPollId}`;
   const shareText = `I voted "${myChoice}" on today's poll: "${question}" What would you pick?`;
+  return { myChoice, shareText, shareUrl };
+}
 
-  // Web Share API opens the device's native share sheet (mobile mostly).
-  // Falls back to copying the text, for browsers that don't support it.
+async function shareResult() {
+  const { myChoice, shareText, shareUrl } = buildShareContent();
+  if (!myChoice) return;
+
+  // On mobile, prefer the native OS share sheet if the browser offers
+  // one - it's already a polished, familiar experience there.
   if (navigator.share) {
     try {
       await navigator.share({ title: 'Daily Poll', text: shareText, url: shareUrl });
     } catch (error) {
       // The user closed the share sheet without picking anything -
-      // that's a normal cancellation, not an error worth showing.
+      // a normal cancellation, nothing to do.
     }
-  } else {
-    try {
-      await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
-      const originalLabel = shareBtn.textContent;
-      shareBtn.textContent = '✅ Copied to clipboard!';
-      setTimeout(() => { shareBtn.textContent = originalLabel; }, 2000);
-    } catch (error) {
-      console.error('Could not copy the share text:', error);
-    }
+    return;
+  }
+
+  // No native share sheet available (most desktop browsers) - open our
+  // own menu instead, with direct links to the major platforms.
+  openShareModal(shareText, shareUrl);
+}
+
+// Fills in each platform's share link with this specific vote's text
+// and URL, then shows the modal.
+function openShareModal(shareText, shareUrl) {
+  const encodedText = encodeURIComponent(shareText);
+  const encodedUrl = encodeURIComponent(shareUrl);
+
+  shareWhatsappLink.href = `https://wa.me/?text=${encodedText}%20${encodedUrl}`;
+  shareFacebookLink.href = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
+  shareTwitterLink.href = `https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`;
+  shareEmailLink.href = `mailto:?subject=${encodeURIComponent("Check out today's poll")}&body=${encodedText}%20${encodedUrl}`;
+
+  shareModal.classList.remove('hidden');
+}
+
+function closeShareModal() {
+  shareModal.classList.add('hidden');
+}
+
+async function copyShareLink() {
+  const { myChoice, shareText, shareUrl } = buildShareContent();
+  if (!myChoice) return;
+
+  try {
+    await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
+    const original = shareCopyBtn.innerHTML;
+    shareCopyBtn.textContent = '✅ Copied!';
+    setTimeout(() => { shareCopyBtn.innerHTML = original; }, 2000);
+  } catch (error) {
+    console.error('Could not copy the share link:', error);
   }
 }
 
@@ -566,6 +608,15 @@ archiveModal.addEventListener('click', (event) => {
 
 backToTodayBtn.addEventListener('click', () => loadPoll(getTodayId()));
 shareBtn.addEventListener('click', shareResult);
+closeShareBtn.addEventListener('click', closeShareModal);
+shareCopyBtn.addEventListener('click', copyShareLink);
+
+// Clicking the dark overlay outside the share panel also closes it
+shareModal.addEventListener('click', (event) => {
+  if (event.target === shareModal) {
+    closeShareModal();
+  }
+});
 
 // ============================================================
 // STEP 15: Cookie consent banner
@@ -634,3 +685,12 @@ initCookieBanner();
 // STEP 16: Run this when the page first loads - loads today's poll
 // ============================================================
 loadPoll(getInitialPollId());
+
+// ============================================================
+// STEP 17: Register the service worker (needed for "Add to Home
+// Screen" / "Install app" to be offered by the browser)
+// ============================================================
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('service-worker.js')
+    .catch((error) => console.error('Service worker registration failed:', error));
+}
