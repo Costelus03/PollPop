@@ -67,6 +67,9 @@ const archiveDateInput = document.getElementById('archive-date-input');
 const archiveDateGoBtn = document.getElementById('archive-date-go');
 const archiveDateError = document.getElementById('archive-date-error');
 
+const streakIndicator = document.getElementById('streak-indicator');
+const shareBtn = document.getElementById('share-btn');
+
 // ============================================================
 // STEP 5: Date helpers
 // ============================================================
@@ -97,6 +100,16 @@ function formatDateForDisplay(pollId) {
 // so voting on one day never affects any other day.
 function getStorageKey(pollId) {
   return 'poll_user_choice_' + pollId;
+}
+
+// Checks the page's URL for a "?day=YYYY-MM-DD" parameter - used so a
+// shared link (from the Share button below) opens directly on the poll
+// that was shared, instead of always landing on today's poll.
+function getInitialPollId() {
+  const params = new URLSearchParams(window.location.search);
+  const dayParam = params.get('day');
+  const looksLikeADate = /^\d{4}-\d{2}-\d{2}$/.test(dayParam || '');
+  return looksLikeADate ? dayParam : getTodayId();
 }
 
 // ============================================================
@@ -194,6 +207,105 @@ function renderVotingButtons(options) {
 // ============================================================
 // STEP 9: Draw the result bars (results screen)
 // ============================================================
+// ============================================================
+// STEP 8.5: Streak tracking (consecutive days voted)
+// ============================================================
+const STREAK_STORAGE_KEY = 'poll_streak_data';
+
+// Turns "2026-08-26" into "2026-08-25" - used to check "did you vote
+// yesterday too?" when deciding whether the streak continues or resets.
+function getPreviousDayId(pollId) {
+  const dateObj = new Date(pollId + 'T00:00:00');
+  dateObj.setDate(dateObj.getDate() - 1);
+  const year = dateObj.getFullYear();
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const day = String(dateObj.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+// Called only right after a successful vote on TODAY's real poll (never
+// for archive votes, and never for the "most recent poll" safety-net
+// fallback - both would give a false sense of an unbroken streak).
+function recordStreakVote() {
+  const today = getTodayId();
+  const saved = localStorage.getItem(STREAK_STORAGE_KEY);
+  const streakData = saved ? JSON.parse(saved) : { lastVoteDate: null, count: 0 };
+
+  if (streakData.lastVoteDate === today) {
+    return; // already recorded today somehow - don't double count
+  }
+
+  if (streakData.lastVoteDate === getPreviousDayId(today)) {
+    streakData.count += 1; // voted yesterday too - streak continues
+  } else {
+    streakData.count = 1; // gap in voting, or the very first vote ever
+  }
+
+  streakData.lastVoteDate = today;
+  localStorage.setItem(STREAK_STORAGE_KEY, JSON.stringify(streakData));
+}
+
+// Just READS the current streak, without changing it - safe to call
+// any time the results screen is shown.
+function getCurrentStreak() {
+  const saved = localStorage.getItem(STREAK_STORAGE_KEY);
+  if (!saved) return 0;
+
+  const streakData = JSON.parse(saved);
+  // Only count it as an active streak if today is already part of it
+  return streakData.lastVoteDate === getTodayId() ? streakData.count : 0;
+}
+
+// ============================================================
+// STEP 8.6: Share button
+// ============================================================
+function renderStreakAndShare() {
+  // Streak only makes sense for today's real poll, not archive browsing
+  const isToday = currentPollId === getTodayId();
+  const streak = isToday ? getCurrentStreak() : 0;
+
+  if (streak >= 2) {
+    streakIndicator.textContent = `🔥 ${streak}-day streak! Come back tomorrow.`;
+    streakIndicator.classList.remove('hidden');
+  } else {
+    streakIndicator.classList.add('hidden');
+  }
+
+  // Only show Share if this browser actually has a recorded vote for
+  // the poll currently on screen (works for today AND archive polls)
+  const myChoice = localStorage.getItem(getStorageKey(currentPollId));
+  shareBtn.classList.toggle('hidden', !myChoice);
+}
+
+async function shareResult() {
+  const myChoice = localStorage.getItem(getStorageKey(currentPollId));
+  if (!myChoice) return;
+
+  const question = questionEl.textContent;
+  const shareUrl = `${window.location.origin}${window.location.pathname}?day=${currentPollId}`;
+  const shareText = `I voted "${myChoice}" on today's poll: "${question}" What would you pick?`;
+
+  // Web Share API opens the device's native share sheet (mobile mostly).
+  // Falls back to copying the text, for browsers that don't support it.
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: 'Daily Poll', text: shareText, url: shareUrl });
+    } catch (error) {
+      // The user closed the share sheet without picking anything -
+      // that's a normal cancellation, not an error worth showing.
+    }
+  } else {
+    try {
+      await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
+      const originalLabel = shareBtn.textContent;
+      shareBtn.textContent = '✅ Copied to clipboard!';
+      setTimeout(() => { shareBtn.textContent = originalLabel; }, 2000);
+    } catch (error) {
+      console.error('Could not copy the share text:', error);
+    }
+  }
+}
+
 function renderResults(options) {
   const total = Object.values(options).reduce((sum, count) => sum + count, 0);
   const sortedNames = Object.keys(options).sort((a, b) => a.localeCompare(b));
@@ -233,6 +345,8 @@ function renderResults(options) {
 
   optionsContainer.classList.add('hidden');
   resultsContainer.classList.remove('hidden');
+
+  renderStreakAndShare();
 }
 
 // ============================================================
@@ -329,6 +443,13 @@ async function handleVote(optionName) {
   // right away, so this browser can never end up voting twice on this
   // poll - even if something below fails.
   localStorage.setItem(getStorageKey(currentPollId), optionName);
+
+  // Only counts toward the streak if this is genuinely today's poll -
+  // not an archive vote, and not the "most recent poll" safety-net
+  // fallback (currentPollId would be a past date in that case too).
+  if (currentPollId === getTodayId()) {
+    recordStreakVote();
+  }
 
   // ---- Step 2: refresh the on-screen numbers ----
   // If THIS fails, the vote itself is still safely saved - we just
@@ -444,6 +565,7 @@ archiveModal.addEventListener('click', (event) => {
 });
 
 backToTodayBtn.addEventListener('click', () => loadPoll(getTodayId()));
+shareBtn.addEventListener('click', shareResult);
 
 // ============================================================
 // STEP 15: Cookie consent banner
@@ -511,4 +633,4 @@ initCookieBanner();
 // ============================================================
 // STEP 16: Run this when the page first loads - loads today's poll
 // ============================================================
-loadPoll(getTodayId());
+loadPoll(getInitialPollId());
