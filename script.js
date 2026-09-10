@@ -191,6 +191,21 @@ function renderPollHeader(pollId, question) {
     dateLabelEl.textContent = 'Poll from ' + formatDateForDisplay(pollId);
     backToTodayBtn.classList.remove('hidden');
   }
+
+  // Update the browser tab title + meta description live, right here,
+  // with whatever poll is ACTUALLY on screen for THIS visitor. Unlike
+  // the once-a-day automated update (which can only guess one timezone
+  // for crawlers that don't run JavaScript), this is always exactly
+  // correct, for every visitor, in every timezone, the moment the page
+  // loads - because it uses the same real data they're looking at.
+  document.title = `${question} — Daily Poll`;
+  const descriptionTag = document.querySelector('meta[name="description"]');
+  if (descriptionTag) {
+    descriptionTag.setAttribute(
+      'content',
+      `Today's question: "${question}" Vote and see what everyone else picked. A new poll every day.`
+    );
+  }
 }
 
 // ============================================================
