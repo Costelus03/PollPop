@@ -23,7 +23,7 @@ jobs:
           node-version: '24'
 
       - name: Install dependencies
-        run: npm install firebase-admin @anthropic-ai/sdk
+        run: npm install firebase-admin@13.10.0 @anthropic-ai/sdk
 
       - name: Create tomorrow's poll
         env:
